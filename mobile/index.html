@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html ng-app="connect">
+<head>
+	<title>Connect to Server</title>
+</head>
+<body>
+	<h1>Connect</h1>
+
+	<section 
+		connect>		
+		<ul ng-repeat="user in users">
+			<li> {{ user.name }} </li>
+			<li> {{ user.course }} </li>
+			<hr />
+		</ul>
+	</section>	
+
+	<section
+		send-to-server>
+		<input type="text" ng-model="user.name" /><br />
+		<input type="text" ng-model="user.course" /><br />
+		<input type="button" ng-click="submit()" value="Submit" />
+	</section>
+
+	<script type="text/javascript" src="js/angular.min.js"></script>
+	<script type="text/javascript">
+		angular
+			.module( "connect" , [] )
+
+			.service( "serverData" , [
+				function service ( ) {
+					var url = "http://192.168.1.33";
+					var port = "8000";
+
+					return {
+						"server": url + ":" + port,
+						"changeUrl": function ( newUrl ) {
+							url = newUrl;
+						},
+						"changePort": function ( newPort ) {
+							port = newPort;
+						}
+
+					}
+				}
+			] )
+
+			.directive( "connect" , [
+				"$http",
+				"serverData",
+				function directive ( $http , serverData ) {
+					return {
+						"restrict": "A",
+						"scope": true,
+						"link": function onLink ( scope , element , attributeSet ) {
+
+							scope.users = {};
+
+							serverData.changeUrl( "http://hello.com" );
+
+							serverData.changePort( "8000" );
+
+							serverData.server;
+
+
+							$http.get( "http://192.168.1.36:8000/get/data" )
+							.success( function onSuccess ( response ) {
+								scope.users = response.reverse();
+							} );
+
+							scope.$on( "new-user" , 
+								function onReceive ( evt , data ) {
+									scope.users.unshift( data );
+								} );
+
+						}
+					}
+				}
+			] )
+			.directive( "sendToServer" , [
+				"$http",
+				"$rootScope",
+				function directive ( $http , $rootScope ) {
+					return {
+						"restrict": "A",
+						"scope": true,						
+						"link": function onLink ( scope , element , attributeSet ) {
+
+							scope.user = {};
+
+							scope.submit = function submit ( ) {
+								
+								$http.post( "http://192.168.1.36:8000/post/data" , scope.user )
+								.success( function onSuccess ( response ) {
+
+									scope.user = {};
+
+									$rootScope.$broadcast( "new-user" , response );
+								} );
+							}
+
+						}
+					}
+				}
+			] );
+	</script>
+</body>
+</html>
